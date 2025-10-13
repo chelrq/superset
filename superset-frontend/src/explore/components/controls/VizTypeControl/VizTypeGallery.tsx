@@ -651,6 +651,16 @@ export default function VizTypeGallery(props: VizTypeGalleryProps) {
     return [];
   };
 
+  useEffect(() => {
+    if (!searchInputRef.current) return;
+  
+    const timeoutId = setTimeout(() => {
+        searchInputRef.current?.focus();
+    }, 300);
+  
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   return (
     <VizPickerLayout
       className={className}
