@@ -94,17 +94,97 @@ export default styled.div`
     }
 
     .dt-pagination {
-      text-align: right;
-      /* use padding instead of margin so clientHeight can capture it */
-      padding-top: 0.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: ${theme.gridUnit * 2}px ${theme.gridUnit * 3}px;
+      margin-top: ${theme.gridUnit * 2}px;
     }
     .dt-pagination .pagination {
-      margin: 0;
-    }
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      margin: ${theme.gridUnit * 4}px 0;
+      padding: 0;
+      gap: ${theme.gridUnit}px;
+      font-size: ${theme.typography.sizes.s}px;
 
-    .pagination > li > span.dt-pagination-ellipsis:focus,
-    .pagination > li > span.dt-pagination-ellipsis:hover {
-      background: ${theme.colors.grayscale.light5};
+      li {
+        display: inline-block;
+        flex-shrink: 0;
+
+        a,
+        span {
+          display: inline-block;
+          padding: ${theme.gridUnit * 2}px ${theme.gridUnit * 3}px;
+          text-decoration: none;
+          background-color: ${theme.colors.grayscale.light5};
+          border-radius: ${theme.borderRadius}px;
+          border: 1px solid ${theme.colors.grayscale.light2};
+          color: ${theme.colors.grayscale.dark1};
+          cursor: pointer;
+          line-height: 1;
+          min-width: ${theme.gridUnit * 8}px;
+          text-align: center;
+
+          &:hover,
+          &:focus {
+            z-index: 2;
+            color: ${theme.colors.grayscale.dark1};
+            background-color: ${theme.colors.grayscale.light3};
+            border-color: ${theme.colors.grayscale.light2};
+            text-decoration: none;
+          }
+        }
+
+        &.disabled {
+          a,
+          span {
+            background-color: transparent;
+            border-color: transparent;
+            cursor: default;
+            color: ${theme.colors.grayscale.light1};
+
+            &:focus {
+              outline: none;
+            }
+
+            &:hover {
+              background-color: transparent;
+              border-color: transparent;
+            }
+          }
+        }
+
+        &.active {
+          a,
+          span {
+            z-index: 3;
+            color: ${theme.colors.grayscale.light5};
+            cursor: default;
+            background-color: ${theme.colors.primary.base};
+            border-color: ${theme.colors.primary.base};
+
+            &:focus {
+              outline: none;
+            }
+          }
+        }
+
+        &.dt-pagination-ellipsis {
+          span {
+            border-color: transparent;
+
+            &:hover,
+            &:focus {
+              background-color: ${theme.colors.grayscale.light5};
+              border-color: transparent;
+              cursor: default;
+            }
+          }
+        }
+      }
     }
 
     .dt-no-results {
