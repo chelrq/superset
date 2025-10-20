@@ -88,9 +88,25 @@ export default memo(
       currentPage,
       maxPageItemCount,
     );
+    const isFirstPage = currentPage === 0;
+    const isLastPage = currentPage === pageCount - 1;
+
     return (
       <div ref={ref} className="dt-pagination" style={style}>
         <ul className="pagination pagination-sm">
+          {/* Previous button */}
+          <li className={isFirstPage ? 'disabled' : undefined}>
+            <span
+              role="button"
+              tabIndex={isFirstPage ? -1 : 0}
+              onClick={e => {
+                e.preventDefault();
+                if (!isFirstPage) onPageChange(currentPage - 1);
+              }}
+            >
+              «
+            </span>
+          </li>
           {pageItems.map(item =>
             typeof item === 'number' ? (
               // actual page number
@@ -115,6 +131,19 @@ export default memo(
               </li>
             ),
           )}
+          {/* Next button */}
+          <li className={isLastPage ? 'disabled' : undefined}>
+            <span
+              role="button"
+              tabIndex={isLastPage ? -1 : 0}
+              onClick={e => {
+                e.preventDefault();
+                if (!isLastPage) onPageChange(currentPage + 1);
+              }}
+            >
+              »
+            </span>
+          </li>
         </ul>
       </div>
     );
