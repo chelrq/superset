@@ -36,7 +36,8 @@ const xssFilter = new FilterXSS({
       'muted',
     ],
   },
-  stripIgnoreTag: true,
+  stripIgnoreTag: false,
+  stripIgnoreTagBody: ['script', 'style'],
   css: false,
 });
 
@@ -54,6 +55,7 @@ export function hasHtmlTagPattern(str: string): boolean {
 export function isProbablyHTML(text: string) {
   const cleanedStr = text.trim().toLowerCase();
 
+  // Check for DOCTYPE strings only
   if (
     cleanedStr.startsWith('<!doctype html>') &&
     hasHtmlTagPattern(cleanedStr)
@@ -63,7 +65,20 @@ export function isProbablyHTML(text: string) {
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(cleanedStr, 'text/html');
-  return Array.from(doc.body.childNodes).some(({ nodeType }) => nodeType === 1);
+
+  // Check if DOMParser detected any element nodes
+  const hasElementNodes = Array.from(doc.body.childNodes).some(
+    ({ nodeType }) => nodeType === 1,
+  );
+
+  // If no element nodes found, it's definitely not HTML
+  if (!hasElementNodes) {
+    return false;
+  }
+
+  // DOMParser may create implicit elements for malformed content, but we want to ensure
+  // the string actually contains recognizable HTML tags
+  return hasHtmlTagPattern(cleanedStr);
 }
 
 export function sanitizeHtmlIfNeeded(htmlString: string) {

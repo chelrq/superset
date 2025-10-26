@@ -32,6 +32,28 @@ describe('sanitizeHtml', () => {
     const sanitizedString = sanitizeHtml(htmlString);
     expect(sanitizedString).not.toContain('script');
   });
+
+  test('should sanitize common XSS attack vectors', () => {
+    // Script tag injection
+    expect(sanitizeHtml('<script>alert(1)</script>')).not.toContain('script');
+
+    // Event handler injection
+    const onclickAttack = '<div onclick="alert(1)">click me</div>';
+    expect(sanitizeHtml(onclickAttack)).not.toContain('onclick');
+
+    // JavaScript protocol
+    const jsProtocol = '<a href="javascript:alert(1)">link</a>';
+    expect(sanitizeHtml(jsProtocol)).not.toContain('javascript:');
+
+    // Iframe injection
+    const iframeAttack = '<iframe src="evil.com"></iframe>';
+    const sanitized = sanitizeHtml(iframeAttack);
+    expect(sanitized).not.toContain('iframe');
+
+    // IMG onerror
+    const imgAttack = '<img src=x onerror="alert(1)">';
+    expect(sanitizeHtml(imgAttack)).not.toContain('onerror');
+  });
 });
 
 describe('isProbablyHTML', () => {
@@ -41,6 +63,16 @@ describe('isProbablyHTML', () => {
     expect(isHTML).toBe(true);
   });
 
+  test('should detect XSS attempts as HTML and trigger sanitization', () => {
+    // These should be detected as HTML so they get sanitized
+    expect(isProbablyHTML('<script>alert(1)</script>')).toBe(true);
+    expect(isProbablyHTML('<div onclick="evil()">text</div>')).toBe(true);
+    expect(isProbablyHTML('<a href="javascript:void(0)">link</a>')).toBe(true);
+    expect(isProbablyHTML('<body onload="alert(1)">')).toBe(true);
+    expect(isProbablyHTML('<style>body{display:none}</style>')).toBe(true);
+    expect(isProbablyHTML('<html><head><title>Fake</title></head></html>')).toBe(true);
+  });
+
   test('should return false if the text does not contain HTML tags', () => {
     const plainText = 'Just a plain text';
     const isHTML = isProbablyHTML(plainText);
@@ -48,6 +80,36 @@ describe('isProbablyHTML', () => {
 
     const trickyText = 'a <= 10 and b > 10';
     expect(isProbablyHTML(trickyText)).toBe(false);
+  });
+
+  test('should return false for strings with angle brackets that are not HTML', () => {
+    // Empty angle brackets
+    expect(isProbablyHTML('<>')).toBe(false);
+
+    // Single angle bracket
+    expect(isProbablyHTML('<')).toBe(false);
+    expect(isProbablyHTML('>')).toBe(false);
+
+    // Comparison operators
+    expect(isProbablyHTML('5 < 10')).toBe(false);
+    expect(isProbablyHTML('10 > 5')).toBe(false);
+    expect(isProbablyHTML('a <= b')).toBe(false);
+    expect(isProbablyHTML('x >= y')).toBe(false);
+
+    // Generic labels/tags that don't match HTML tag patterns
+    expect(isProbablyHTML('<value>')).toBe(false);
+    expect(isProbablyHTML('<data>')).toBe(false);
+    expect(isProbablyHTML('<name>')).toBe(false);
+    expect(isProbablyHTML('<tag>')).toBe(false);
+    expect(isProbablyHTML('<foo>bar</foo>')).toBe(false);
+
+    // Mathematical expressions
+    expect(isProbablyHTML('if (x < 5 && y > 3)')).toBe(false);
+    expect(isProbablyHTML('result: <pending>')).toBe(false);
+
+    // Arrow notation
+    expect(isProbablyHTML('A -> B')).toBe(false);
+    expect(isProbablyHTML('<->')).toBe(false);
   });
 });
 
@@ -81,6 +143,28 @@ describe('safeHtmlSpan', () => {
     const plainText = 'Just a plain text';
     const result = safeHtmlSpan(plainText);
     expect(result).toEqual(plainText);
+  });
+
+  test('should return plain text for angle brackets that are not HTML (bug fix)', () => {
+    // These should NOT be treated as HTML and should be returned as-is
+    expect(safeHtmlSpan('<>')).toBe('<>');
+    expect(safeHtmlSpan('<value>')).toBe('<value>');
+    expect(safeHtmlSpan('a < b')).toBe('a < b');
+    expect(safeHtmlSpan('result: <pending>')).toBe('result: <pending>');
+  });
+
+  test('should still sanitize actual XSS attempts (security verification)', () => {
+    // These should be treated as HTML and wrapped in sanitized span
+    const xssAttempt = '<script>alert(1)</script>';
+    const result = safeHtmlSpan(xssAttempt);
+
+    // Should return a span element (not plain text)
+    expect(result).toHaveProperty('type', 'span');
+    expect(result).toHaveProperty('props.className', 'safe-html-wrapper');
+
+    // The sanitized HTML should NOT contain the script tag
+    const sanitizedHtml = (result as any).props.dangerouslySetInnerHTML.__html;
+    expect(sanitizedHtml).not.toContain('script');
   });
 });
 
