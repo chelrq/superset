@@ -42,6 +42,30 @@ const testTags = [
   },
 ];
 
+// Tags for testing alphabetical sorting
+const unsortedTags = [
+  {
+    name: 'Zebra',
+    id: 1,
+  },
+  {
+    name: 'apple',
+    id: 2,
+  },
+  {
+    name: 'Banana',
+    id: 3,
+  },
+  {
+    name: 'cherry',
+    id: 4,
+  },
+  {
+    name: 'Date',
+    id: 5,
+  },
+];
+
 const mockedProps: TagsListProps = {
   tags: testTags,
   onDelete: undefined,
@@ -74,4 +98,43 @@ test('should render 3 elements when maxTags is set to 3', async () => {
   const tagsListItems = await findAllTags();
   expect(tagsListItems).toHaveLength(3);
   expect(tagsListItems[2]).toHaveTextContent('+3...');
+});
+
+test('should sort tags alphabetically (case-insensitive)', async () => {
+  render(<TagsList tags={unsortedTags} />);
+  const tagsListItems = await findAllTags();
+  expect(tagsListItems).toHaveLength(5);
+  // Expected alphabetical order (case-insensitive): apple, Banana, cherry, Date, Zebra
+  expect(tagsListItems[0]).toHaveTextContent('apple');
+  expect(tagsListItems[1]).toHaveTextContent('Banana');
+  expect(tagsListItems[2]).toHaveTextContent('cherry');
+  expect(tagsListItems[3]).toHaveTextContent('Date');
+  expect(tagsListItems[4]).toHaveTextContent('Zebra');
+});
+
+test('should maintain alphabetical order with maxTags', async () => {
+  render(<TagsList tags={unsortedTags} maxTags={3} />);
+  const tagsListItems = await findAllTags();
+  expect(tagsListItems).toHaveLength(3);
+  // Should show first 2 alphabetically sorted tags and the +3... indicator
+  expect(tagsListItems[0]).toHaveTextContent('apple');
+  expect(tagsListItems[1]).toHaveTextContent('Banana');
+  expect(tagsListItems[2]).toHaveTextContent('+3...');
+});
+
+test('should maintain stable sort order for identical names', async () => {
+  const duplicateTags = [
+    { name: 'Tag', id: 1 },
+    { name: 'tag', id: 2 },
+    { name: 'TAG', id: 3 },
+    { name: 'TaG', id: 4 },
+  ];
+  render(<TagsList tags={duplicateTags} />);
+  const tagsListItems = await findAllTags();
+  expect(tagsListItems).toHaveLength(4);
+  // All variations of "tag" should maintain their relative order
+  expect(tagsListItems[0]).toHaveTextContent('Tag');
+  expect(tagsListItems[1]).toHaveTextContent('tag');
+  expect(tagsListItems[2]).toHaveTextContent('TAG');
+  expect(tagsListItems[3]).toHaveTextContent('TaG');
 });
