@@ -299,3 +299,140 @@ test('does omit hiddenFormData when query_mode is not enabled', async () => {
     expect(formData[key]).toBeUndefined();
   });
 });
+
+describe('Document title management', () => {
+  const originalTitle = 'Original Title';
+
+  beforeEach(() => {
+    // Set a known original title before each test
+    document.title = originalTitle;
+  });
+
+  test('updates document title when chart has a name', async () => {
+    const chartName = 'My Awesome Chart';
+    const customState = {
+      ...reduxState,
+      explore: {
+        ...reduxState.explore,
+        sliceName: chartName,
+      },
+    };
+
+    renderWithRouter({ initialState: customState });
+
+    await waitFor(() => {
+      expect(document.title).toBe(chartName);
+    });
+  });
+
+  test('updates document title when slice name changes', async () => {
+    const initialChartName = 'Initial Chart';
+    const updatedChartName = 'Updated Chart';
+
+    const customState = {
+      ...reduxState,
+      explore: {
+        ...reduxState.explore,
+        sliceName: initialChartName,
+      },
+    };
+
+    const { rerender } = renderWithRouter({ initialState: customState });
+
+    // Verify initial title is set
+    await waitFor(() => {
+      expect(document.title).toBe(initialChartName);
+    });
+
+    // Update the slice name
+    const updatedState = {
+      ...customState,
+      explore: {
+        ...customState.explore,
+        sliceName: updatedChartName,
+      },
+    };
+
+    // Re-render with updated state
+    rerender(
+      <MemoryRouter initialEntries={[`${defaultPath}`]}>
+        <Route path={defaultPath}>
+          <ExploreViewContainer />
+        </Route>
+      </MemoryRouter>,
+    );
+
+    // Verify title is updated
+    await waitFor(() => {
+      expect(document.title).toBe(updatedChartName);
+    });
+  });
+
+  test('does not update document title when sliceName is null', async () => {
+    const customState = {
+      ...reduxState,
+      explore: {
+        ...reduxState.explore,
+        sliceName: null,
+      },
+    };
+
+    renderWithRouter({ initialState: customState });
+
+    // Title should remain as the original
+    await waitFor(() => {
+      expect(document.title).toBe(originalTitle);
+    });
+  });
+
+  test('restores original title when component unmounts', async () => {
+    const chartName = 'Chart to be Unmounted';
+    const customState = {
+      ...reduxState,
+      explore: {
+        ...reduxState.explore,
+        sliceName: chartName,
+      },
+    };
+
+    const { unmount } = renderWithRouter({ initialState: customState });
+
+    // Verify chart title is set
+    await waitFor(() => {
+      expect(document.title).toBe(chartName);
+    });
+
+    // Unmount the component
+    unmount();
+
+    // Verify title is restored to original or 'Superset' as fallback
+    expect(document.title).toBe(originalTitle || 'Superset');
+  });
+
+  test('restores "Superset" as title when original title was empty', async () => {
+    // Set empty original title
+    document.title = '';
+
+    const chartName = 'Temporary Chart';
+    const customState = {
+      ...reduxState,
+      explore: {
+        ...reduxState.explore,
+        sliceName: chartName,
+      },
+    };
+
+    const { unmount } = renderWithRouter({ initialState: customState });
+
+    // Verify chart title is set
+    await waitFor(() => {
+      expect(document.title).toBe(chartName);
+    });
+
+    // Unmount the component
+    unmount();
+
+    // Verify title is restored to 'Superset' as fallback
+    expect(document.title).toBe('Superset');
+  });
+});

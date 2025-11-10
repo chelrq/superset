@@ -404,6 +404,18 @@ function ExploreViewContainer(props) {
     }
   }, [isDynamicPluginLoading]);
 
+  // Update document title when chart name changes
+  useEffect(() => {
+    const originalTitle = document.title;
+    if (props.sliceName) {
+      document.title = props.sliceName;
+    }
+    // Cleanup: restore original title when component unmounts or navigating away
+    return () => {
+      document.title = originalTitle || 'Superset';
+    };
+  }, [props.sliceName]);
+
   useEffect(() => {
     const hasError = Object.values(props.controls).some(
       control =>
