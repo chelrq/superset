@@ -44,6 +44,8 @@ import { safeStringify } from 'src/utils/safeStringify';
 import PublishedStatus from 'src/dashboard/components/PublishedStatus';
 import UndoRedoKeyListeners from 'src/dashboard/components/UndoRedoKeyListeners';
 import PropertiesModal from 'src/dashboard/components/PropertiesModal';
+import UnsavedChangesModal from 'src/components/UnsavedChangesModal';
+import { useUnsavedChangesModal } from 'src/hooks/useUnsavedChangesModal';
 import {
   UNDO_LIMIT,
   SAVE_TYPE_OVERWRITE,
@@ -504,6 +506,17 @@ const Header = () => {
       ?.SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE;
   const isEmbedded = !dashboardInfo?.userId;
 
+  // Hook for unsaved changes modal
+  const {
+    showModal: showUnsavedChangesModal,
+    handleSave: handleSaveFromModal,
+    handleDiscard: handleDiscardFromModal,
+    handleHide: handleHideModal,
+  } = useUnsavedChangesModal({
+    hasUnsavedChanges: hasUnsavedChanges && editMode,
+    onSave: overwriteDashboard,
+  });
+
   const handleOnPropertiesChange = useCallback(
     updates => {
       boundActionCreators.dashboardInfoChanged({
@@ -816,6 +829,15 @@ const Header = () => {
           dashboardId={dashboardInfo.id}
         />
       )}
+
+      <UnsavedChangesModal
+        showModal={showUnsavedChangesModal}
+        onSave={handleSaveFromModal}
+        onDiscard={handleDiscardFromModal}
+        onHide={handleHideModal}
+        saveDisabled={!hasUnsavedChanges}
+      />
+
       <Global
         styles={css`
           .antd5-menu-vertical {

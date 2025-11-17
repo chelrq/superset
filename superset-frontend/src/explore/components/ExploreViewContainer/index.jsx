@@ -64,6 +64,8 @@ import * as exploreActions from 'src/explore/actions/exploreActions';
 import * as saveModalActions from 'src/explore/actions/saveModalActions';
 import { useTabId } from 'src/hooks/useTabId';
 import withToasts from 'src/components/MessageToasts/withToasts';
+import UnsavedChangesModal from 'src/components/UnsavedChangesModal';
+import { useUnsavedChangesModal } from 'src/hooks/useUnsavedChangesModal';
 import ExploreChartPanel from '../ExploreChartPanel';
 import ConnectedControlPanelsContainer from '../ControlPanelsContainer';
 import SaveModal from '../SaveModal';
@@ -551,6 +553,32 @@ function ExploreViewContainer(props) {
     return errorMessage;
   }, [props.controls]);
 
+  // Hook for unsaved changes modal
+  const handleSaveChart = useCallback(async () => {
+    // Trigger save action for the chart
+    if (props.can_overwrite && props.slice) {
+      // If we can overwrite and have an existing slice, save it
+      props.actions.updateSlice(
+        props.slice,
+        props.sliceName || props.slice.slice_name,
+        [], // dashboards - empty array for no dashboard changes
+      );
+    } else {
+      // Otherwise show the save modal
+      props.actions.setSaveModalVisibility(true);
+    }
+  }, [props.actions, props.can_overwrite, props.slice, props.sliceName]);
+
+  const {
+    showModal: showUnsavedChangesModal,
+    handleSave: handleSaveFromModal,
+    handleDiscard: handleDiscardFromModal,
+    handleHide: handleHideModal,
+  } = useUnsavedChangesModal({
+    hasUnsavedChanges: chartIsStale && !props.standalone,
+    onSave: handleSaveChart,
+  });
+
   function renderChartContainer() {
     return (
       <ExploreChartPanel
@@ -722,6 +750,14 @@ function ExploreViewContainer(props) {
           dashboardId={props.dashboardId}
         />
       )}
+
+      <UnsavedChangesModal
+        showModal={showUnsavedChangesModal}
+        onSave={handleSaveFromModal}
+        onDiscard={handleDiscardFromModal}
+        onHide={handleHideModal}
+        saveDisabled={errorMessage || props.chart.chartStatus === 'loading'}
+      />
     </ExploreContainer>
   );
 }
